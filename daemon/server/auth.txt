@@ -1,0 +1,26 @@
+We get pid, uid, gid
+
+1) Once the server stands up, it creates its fd and binds to it. Only the server has execute permissions on the file, and
+only pre-authorized groups have read/write permissions to the file.
+
+2) when a proxy client wants to connect to the server, it sends its pid,uid,gid implicitly, which the server reads in 
+recvmsg. Checks then begin:
+
+  (a) the process name matches expectations (can get pname with pid - syscall)
+  (b) the code that the proxy process is executing is trusted (code signing)
+  (c) the uid and gid are safe. 
+
+Once the server verifies all these steps (and more), it will deem the proxy process trusted, and save the (pid,uid,gid) tuple in its trusted keystore, and reply with a authorized control message giving its own tuple.
+
+Every time the proxy and server exchange further messages, they will receive each other's tuples again. They are then to verify those match the ones they have on their respective keystores.
+
+If any verification step fails, the server will lock down permissions on its file for that process.
+
+REMEMBER file permissions are meaningless, those should be enforced at the directory level
+
+Consider abstract vs filesystem namespace
+
+Encryption?
+
+Solution:
+  The daemon process will have a service manager that spawns both the server and the proxy service. It then knows the pid of both. It can also restart either if they die. It could then pass the pids to each of them, and they can verify their peers using (2) above. It should also set the permissions bits on the socket directory to allow rwx for server and rw for client. If either dies, it should clean up those, restart them, and reset the permissions
