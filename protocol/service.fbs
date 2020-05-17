@@ -1,0 +1,34 @@
+namespace service;
+
+table HeartbeatRequest {}
+
+table HeartbeatResponse {}
+
+table AuthorizeProcessRequest {
+  old_pid:uint;
+  new_pid:uint;
+}
+
+table AuthorizeProcessResponse {}
+
+union Payload { 
+  HeartbeatRequest,
+  HeartbeatResponse,
+
+  AuthorizeProcessRequest,
+  AuthorizeProcessResponse
+}
+
+table Message {
+  seq_num:ulong;
+  payload:Payload;
+}
+
+rpc_service DeadUnit {
+  Heartbeat(HeartbeatRequest):HeartbeatResponse;
+  // AuthorizeProcess is used to authorize a new pid so that the server
+  // can start accepting messages from that process
+  AuthorizeProcess(AuthorizeProcessRequest):AuthorizeProcessResponse;
+}
+
+root_type Message;
